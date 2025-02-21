@@ -31,7 +31,7 @@ WORKDIR /home/container
 
 # Copy configuration files
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY supervisord.conf /etc/supervisord.conf
+#COPY supervisord.conf /etc/supervisord.conf
 
 # Expose ports
 EXPOSE 80
