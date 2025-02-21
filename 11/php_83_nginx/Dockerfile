@@ -30,7 +30,7 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 # Copy configuration files
-COPY nginx.conf /etc/nginx/nginx.conf
+#COPY nginx.conf /etc/nginx/nginx.conf
 #COPY supervisord.conf /etc/supervisord.conf
 
 # Expose ports
