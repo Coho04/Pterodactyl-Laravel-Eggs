@@ -20,7 +20,6 @@ jobs:
         php_version:
           - 82  # PHP 8.2
           - 83  # PHP 8.3
-          - 83_nginx
 
     steps:
       - uses: actions/checkout@v4

@@ -14,60 +14,60 @@
     "ghcr.io\/coho04\/pterodactyl-docker-images:laravel_11_php_83": "ghcr.io\/coho04\/pterodactyl-docker-images:laravel_11_php_83"
   },
   "file_denylist": [],
-  "startup": "cd \/home\/container || exit 1;if [ -n \"$USERNAME\" ] && [ -n \"$ACCESS_TOKEN\" ] && [ -n \"$GITHUB_REPO_URL\" ];then  if [ -d .git ];  then    echo -e \"[SETUP] Updating the repository\";    git fetch --all && git reset --hard origin\/\"$BRANCH\";  else    GITHUB_REPO_URL=\"https:\/\/$USERNAME:$ACCESS_TOKEN@${GITHUB_REPO_URL#https:\/\/}\";    echo -e \"[SETUP] Cloning the repository\";    git clone -b \"$BRANCH\" \"$GITHUB_REPO_URL\" \/home\/container\/tmp && mv \/home\/container\/tmp\/.git . && rm -rf \/home\/container\/tmp && git reset --hard;  fi;else  echo -e \"[ERROR] Missing GitHub credentials or repository URL\";  exit 1;fi;if [ -f composer.json ]; then    echo -e \"[SETUP] Install Composer packages\";    composer install;else    echo -e \"[ERROR] No valid composer.json file found for Composer\";    exit 1;fi;if [ -f package.json ]; then    echo -e \"[SETUP] Install NPM packages\";    npm install;    if [ -f vite.config.js ]; then        echo -e \"[SETUP] Build Assets with Vite\";        npm run build;    else        echo -e \"[ERROR] No valid Vite file found for Vite\";    fi;else    echo -e \"[ERROR] No valid package.json file found for NPM\";fi;php artisan migrate --no-interaction --force;php artisan serve --host=0.0.0.0 --port \"${SERVER_PORT:-8000}\";",
-  "config": {
-    "files": "{}",
-    "startup": "{\r\n    \"done\": \"Server running on\"\r\n}",
-    "logs": "{\r\n    \"location\": \"storage\/logs\/laravel.log\"\r\n}",
-    "stop": "^^C"
-  },
-  "scripts": {
-    "installation": {
-      "script": null,
-      "container": "alpine:3.4",
-      "entrypoint": "ash"
+  "startup": "cd \/home\/container || exit 1; if [ -n \"$USERNAME\" ] && [ -n \"$ACCESS_TOKEN\" ] && [ -n \"$GITHUB_REPO_URL\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin\/\"$BRANCH\"; else GITHUB_REPO_URL=\"https:\/\/$USERNAME:$ACCESS_TOKEN@${GITHUB_REPO_URL#https:\/\/}\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"$BRANCH\" \"$GITHUB_REPO_URL\" \/home\/container\/tmp && mv \/home\/container\/tmp\/.git . && rm -rf \/home\/container\/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; php artisan serve --host=0.0.0.0 --port \"${SERVER_PORT:-8000}\" & while true; do read -r cmd; if [ -n \"$cmd\" ]; then php artisan $cmd; fi; done;",
+    "config": {
+      "files": "{}",
+      "startup": "{\r\n    \"done\": \"Server running on\"\r\n}",
+      "logs": "{\r\n    \"location\": \"storage\/logs\/laravel.log\"\r\n}",
+      "stop": "pkill -f 'php artisan serve'"
+    },
+    "scripts": {
+      "installation": {
+        "script": null,
+        "container": "alpine:3.4",
+        "entrypoint": "ash"
+      }
+    },
+    "variables": [
+      {
+        "name": "GitHub Repository URL",
+        "description": "The URL of your GitHub repository.",
+        "env_variable": "GITHUB_REPO_URL",
+        "default_value": "",
+        "user_viewable": true,
+        "user_editable": true,
+        "rules": "required|string",
+        "field_type": "text"
+      },
+      {
+        "name": "Git Access Token",
+        "description": "Your GitHub token for accessing the repository.",
+        "env_variable": "ACCESS_TOKEN",
+        "default_value": "",
+        "user_viewable": true,
+        "user_editable": true,
+        "rules": "required|string",
+        "field_type": "text"
+      },
+      {
+        "name": "Git Username",
+        "description": "Username for accessing the GitHub repository.",
+        "env_variable": "USERNAME",
+        "default_value": "",
+        "user_viewable": true,
+        "user_editable": true,
+        "rules": "required|string",
+        "field_type": "text"
+      },
+      {
+        "name": "Git Branch",
+        "description": "The branch of the repository to clone. Default is 'main'.",
+        "env_variable": "BRANCH",
+        "default_value": "main",
+        "user_viewable": true,
+        "user_editable": true,
+        "rules": "required|string",
+        "field_type": "text"
+      }
+    ]
     }
-  },
-  "variables": [
-    {
-      "name": "GitHub Repository URL",
-      "description": "The URL of your GitHub repository.",
-      "env_variable": "GITHUB_REPO_URL",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Git Access Token",
-      "description": "Your GitHub token for accessing the repository.",
-      "env_variable": "ACCESS_TOKEN",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Git Username",
-      "description": "Username for accessing the GitHub repository.",
-      "env_variable": "USERNAME",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Git Branch",
-      "description": "The branch of the repository to clone. Default is 'main'.",
-      "env_variable": "BRANCH",
-      "default_value": "main",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    }
-  ]
-}
