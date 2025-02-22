@@ -25,7 +25,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set up the working directory
-USER container
+USER root
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
@@ -36,6 +36,8 @@ COPY supervisord.conf /etc/supervisord.conf
 # Ensure /tmp is used for Nginx temp files (fix for read-only file system)
 RUN mkdir -p /tmp/client_body /tmp/proxy /tmp/fastcgi /tmp/uwsgi /tmp/scgi \
     && chown -R www-data:www-data /tmp/client_body /tmp/proxy /tmp/fastcgi /tmp/uwsgi /tmp/scgi
+
+USER container
 
 # Expose ports
 EXPOSE 80
