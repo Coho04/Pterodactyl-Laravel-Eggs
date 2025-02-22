@@ -33,6 +33,10 @@ WORKDIR /home/container
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY supervisord.conf /etc/supervisord.conf
 
+# Ensure /tmp is used for Nginx temp files (fix for read-only file system)
+RUN mkdir -p /tmp/client_body /tmp/proxy /tmp/fastcgi /tmp/uwsgi /tmp/scgi \
+    && chown -R www-data:www-data /tmp/client_body /tmp/proxy /tmp/fastcgi /tmp/uwsgi /tmp/scgi
+
 # Expose ports
 EXPOSE 80
 
