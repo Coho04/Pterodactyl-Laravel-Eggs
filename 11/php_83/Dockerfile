@@ -26,7 +26,7 @@ LABEL author="Collin Ilgner" maintainer="cohohohn04@gmail.com"
 
 # Install system dependencies
 RUN apt-get update -y \
-    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 \
+    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
