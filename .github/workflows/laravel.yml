@@ -40,4 +40,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/coho04/pterodactyl-docker-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}
+            ghcr.io/coho04/pterodactyl-laravel-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}

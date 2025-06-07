@@ -30,6 +30,10 @@ export TZ
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
 
+# Start Redis in the background
+echo "[SETUP] Starting Redis server"
+redis-server --daemonize yes --bind 127.0.0.1 --protected-mode yes
+
 # Switch to the container's working directory
 cd /home/container || exit 1
 
