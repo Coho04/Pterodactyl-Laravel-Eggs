@@ -10,7 +10,7 @@ on:
 
 jobs:
   push:
-    name: "Coho04:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}"
+    name: "Coho04:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}${{ matrix.variant == 'nginx' && '_nginx' || '' }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -22,8 +22,8 @@ jobs:
           - 83  # PHP 8.3
           - 84  # PHP 8.4
         variant:
-          - ""
-          - "_nginx"
+          - ""       # default
+          - "nginx"  # nginx variant
 
     steps:
       - uses: actions/checkout@v6
@@ -39,8 +39,8 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/${{ matrix.variant == '_nginx' && 'nginx/' || '' }}Dockerfile
+          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/${{ matrix.variant == 'nginx' && 'nginx/' || '' }}Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/coho04/pterodactyl-docker-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}${{ matrix.variant }}
+            ghcr.io/coho04/pterodactyl-docker-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}${{ matrix.variant == 'nginx' && '_nginx' || '' }}
