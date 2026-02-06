@@ -26,7 +26,7 @@ LABEL author="Collin Ilgner" maintainer="cohohohn04@gmail.com"
 
 # Install system dependencies
 RUN apt-get update -y \
-    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client \
+    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client redis-server \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -44,6 +44,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set up the working directory
+RUN useradd -m -d /home/container -s /bin/bash container
+
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container

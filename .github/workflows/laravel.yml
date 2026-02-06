@@ -21,6 +21,9 @@ jobs:
           - 82  # PHP 8.2
           - 83  # PHP 8.3
           - 84  # PHP 8.4
+        variant:
+          - ""
+          - "-nginx"
 
     steps:
       - uses: actions/checkout@v6
@@ -36,8 +39,8 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/Dockerfile
+          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/Dockerfile${{ matrix.variant }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/coho04/pterodactyl-laravel-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}
+            ghcr.io/coho04/pterodactyl-docker-images:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}${{ matrix.variant }}

@@ -34,6 +34,30 @@ export INTERNAL_IP
 echo "[SETUP] Starting Redis server"
 redis-server --daemonize yes --bind 127.0.0.1 --protected-mode yes
 
+# Start PHP-FPM and Nginx if WEB_SERVER is set to nginx (default)
+if [ "${WEB_SERVER}" = "nginx" ] || [ -z "${WEB_SERVER}" ]; then
+    if command -v nginx > /dev/null 2>&1; then
+        echo "[SETUP] Starting PHP-FPM"
+        php-fpm -D
+
+        echo "[SETUP] Configuring Nginx"
+        sed -i "s/8080/${SERVER_PORT}/g" /home/container/nginx.conf
+
+        echo "[SETUP] Starting Nginx"
+        nginx -c /home/container/nginx.conf &
+    else
+        echo "[SETUP] Nginx not installed, skipping Nginx startup"
+    fi
+fi
+
+# Stream Laravel logs
+echo "[SETUP] Streaming Laravel logs"
+mkdir -p storage/logs
+touch storage/logs/laravel.log
+tail -f storage/logs/laravel.log &
+
+echo "[SETUP] Laravel environment ready"
+
 # Switch to the container's working directory
 cd /home/container || exit 1
 
