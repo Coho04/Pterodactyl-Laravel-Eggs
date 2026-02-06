@@ -55,8 +55,8 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 # Copy the entrypoint script and nginx config
-COPY ./../entrypoint.sh /entrypoint.sh
-COPY ./../nginx.conf /home/container/nginx.conf
+COPY entrypoint.sh /entrypoint.sh
+COPY nginx.conf /home/container/nginx.conf
 
 # Set entrypoint
 CMD [ "/bin/bash", "/entrypoint.sh" ]

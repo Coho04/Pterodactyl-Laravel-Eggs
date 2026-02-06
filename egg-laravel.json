@@ -10,11 +10,11 @@
   "description": "Laravel application server with GitHub deployment, version matrix support, and package installation.",
   "features": null,
   "docker_images": {
-    "PHP 8.2 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82-nginx",
+    "PHP 8.2 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82_nginx",
     "PHP 8.2 (Artisan Serve)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82",
-    "PHP 8.3 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_83-nginx",
+    "PHP 8.3 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_83_nginx",
     "PHP 8.3 (Artisan Serve)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_83",
-    "PHP 8.4 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84-nginx",
+    "PHP 8.4 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84_nginx",
     "PHP 8.4 (Artisan Serve)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84"
   },
   "file_denylist": [],

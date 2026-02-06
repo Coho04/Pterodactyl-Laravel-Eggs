@@ -23,7 +23,7 @@ jobs:
           - 84  # PHP 8.4
         variant:
           - ""
-          - "-nginx"
+          - "_nginx"
 
     steps:
       - uses: actions/checkout@v6
@@ -39,7 +39,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/Dockerfile${{ matrix.variant }}
+          file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/${{ matrix.variant == '_nginx' && 'nginx/' || '' }}Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
