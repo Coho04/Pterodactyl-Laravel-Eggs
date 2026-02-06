@@ -46,7 +46,9 @@ RUN useradd -m -d /home/container -s /bin/bash container
 RUN mkdir -p /var/lib/nginx /var/log/nginx \
     && chown -R container:container /var/lib/nginx /var/log/nginx \
     && sed -i 's/user = www-data/user = container/g' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's/group = www-data/group = container/g' /usr/local/etc/php-fpm.d/www.conf
+    && sed -i 's/group = www-data/group = container/g' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/;error_log = log\/php-fpm.log/error_log = \/tmp\/php-fpm.log/g' /usr/local/etc/php-fpm.conf \
+    && sed -i 's/;pid = run\/php-fpm.pid/pid = \/tmp\/php-fpm.pid/g' /usr/local/etc/php-fpm.conf
 
 USER container
 ENV USER=container HOME=/home/container
@@ -54,7 +56,7 @@ WORKDIR /home/container
 
 # Copy the entrypoint script and nginx config
 COPY entrypoint.sh /entrypoint.sh
-COPY nginx.conf /home/container/nginx.conf
+COPY nginx.conf /nginx.conf
 
 # Set entrypoint
 CMD [ "/bin/bash", "/entrypoint.sh" ]

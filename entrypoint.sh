@@ -41,10 +41,11 @@ if [ "${WEB_SERVER}" = "nginx" ] || [ -z "${WEB_SERVER}" ]; then
         php-fpm -D
 
         echo "[SETUP] Configuring Nginx"
-        sed -i "s/8080/${SERVER_PORT}/g" /home/container/nginx.conf
+        cp /nginx.conf /tmp/nginx.conf
+        sed -i "s/8080/${SERVER_PORT}/g" /tmp/nginx.conf
 
         echo "[SETUP] Starting Nginx"
-        nginx -c /home/container/nginx.conf &
+        nginx -c /tmp/nginx.conf &
     else
         echo "[SETUP] Nginx not installed, skipping Nginx startup"
     fi
