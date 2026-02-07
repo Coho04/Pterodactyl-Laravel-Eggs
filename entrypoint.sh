@@ -26,6 +26,10 @@
 TZ=${TZ:-UTC}
 export TZ
 
+# Default the SERVER_PORT environment variable to 8080.
+SERVER_PORT=${SERVER_PORT:-8080}
+export SERVER_PORT
+
 # Set environment variable that holds the Internal Docker IP
 INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
 export INTERNAL_IP
@@ -42,7 +46,7 @@ if [ "${WEB_SERVER}" = "nginx" ] || [ -z "${WEB_SERVER}" ]; then
 
         echo "[SETUP] Configuring Nginx"
         cp /nginx.conf /tmp/nginx.conf
-        sed -i "s/8080/${SERVER_PORT}/g" /tmp/nginx.conf
+        sed -i "s/{{SERVER_PORT}}/${SERVER_PORT}/g" /tmp/nginx.conf
 
         echo "[SETUP] Starting Nginx"
         nginx -c /tmp/nginx.conf &
