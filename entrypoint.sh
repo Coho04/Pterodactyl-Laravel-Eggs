@@ -64,7 +64,12 @@ if [ "${WEB_SERVER}" = "nginx" ] || [ -z "${WEB_SERVER}" ]; then
         # the actual port.  This substitution happens here rather than at
         # build time so that it can react to environment variables provided
         # by the panel.
-        cp /nginx.conf /tmp/nginx.conf
+        if [ -f /etc/nginx/nginx.conf ]; then
+            cp /etc/nginx/nginx.conf /tmp/nginx.conf
+        else
+            echo "[ERROR] Nginx configuration not found at /etc/nginx/nginx.conf"
+            exit 1
+        fi
         sed -i "s/{{SERVER_PORT}}/${SERVER_PORT}/g" /tmp/nginx.conf
 
         echo "[SETUP] Starting Nginx"

@@ -1,14 +1,15 @@
 {
   "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
   "meta": {
-    "version": "PTDL_v2",
-    "update_url": null
+    "version": "PLCN_v3",
+    "update_url": "https://github.com/Coho04/Pterodactyl-Laravel-Eggs/blob/main/egg-laravel.json"
   },
   "exported_at": "2025-02-21T22:47:26+01:00",
   "name": "Laravel",
   "author": "cohohohn04@gmail.com",
   "description": "Laravel application server with GitHub deployment, version matrix support, and package installation.",
-  "features": null,
+  "features": [],
+  "uuid": "2ff2d855-568b-45cc-9b57-00a90e49061f",
   "docker_images": {
     "PHP 8.2 (Nginx)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82_nginx",
     "PHP 8.2 (Artisan Serve)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82",
@@ -18,7 +19,7 @@
     "PHP 8.4 (Artisan Serve)": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84"
   },
   "file_denylist": [],
-  "startup": "cd /home/container || exit 1; if [ -n \"$USERNAME\" ] && [ -n \"$ACCESS_TOKEN\" ] && [ -n \"$GITHUB_REPO_URL\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"$BRANCH\"; else GITHUB_REPO_URL=\"https://$USERNAME:$ACCESS_TOKEN@${GITHUB_REPO_URL#https://}\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"$BRANCH\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ \"$WEB_SERVER\" = \"artisan\" ] || ! command -v nginx > /dev/null 2>&1; then php artisan serve --host=0.0.0.0 --port=\"$SERVER_PORT\" & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\"; fi; done;",
+  "startup": "cd /home/container || exit 1; if [ -n \"$USERNAME\" ] && [ -n \"$ACCESS_TOKEN\" ] && [ -n \"$GITHUB_REPO_URL\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"$BRANCH\"; else GITHUB_REPO_URL=\"https://$USERNAME:$ACCESS_TOKEN@${GITHUB_REPO_URL#https://}\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"$BRANCH\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ \"$WEB_SERVER\" = \"artisan\" ]; then php artisan serve --host=0.0.0.0 --port=\"$SERVER_PORT\" & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\"; fi; done;",
   "config": {
     "files": "{}",
     "startup": "{\r\n    \"done\": \"Laravel environment ready\"\r\n}",
