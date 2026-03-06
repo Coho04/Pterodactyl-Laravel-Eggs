@@ -36,7 +36,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./
           file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/${{ matrix.variant == 'nginx' && 'nginx/' || '' }}Dockerfile
