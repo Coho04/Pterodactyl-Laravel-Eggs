@@ -24,9 +24,9 @@ FROM --platform=$TARGETOS/$TARGETARCH php:8.4-fpm
 
 LABEL author="Collin Ilgner" maintainer="cohohohn04@gmail.com"
 
-# Install system dependencies
+# Install system dependencies (including Nginx + gettext-base for envsubst)
 RUN apt-get update -y \
-    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client redis-server \
+    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client nginx redis-server gettext-base \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -34,7 +34,7 @@ RUN apt-get update -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-# Install PHP extensions
+# Install PHP extensions (including the Redis extension via PECL)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd sockets ftp \
     && pecl install redis \
@@ -43,15 +43,23 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 # Install Composer globally
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set up the working directory
-RUN useradd -m -d /home/container -s /bin/bash container
+# Set up the working directory and reconfigure PHP-FPM + Nginx to run as the
+# unprivileged `container` user with temp paths under /tmp.
+RUN useradd -m -d /home/container -s /bin/bash container \
+    && mkdir -p /var/lib/nginx /var/log/nginx \
+    && chown -R container:container /var/lib/nginx /var/log/nginx \
+    && sed -i 's/user = www-data/user = container/g' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/group = www-data/group = container/g' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/;error_log = log\/php-fpm.log/error_log = \/tmp\/php-fpm.log/g' /usr/local/etc/php-fpm.conf \
+    && sed -i 's/;pid = run\/php-fpm.pid/pid = \/tmp\/php-fpm.pid/g' /usr/local/etc/php-fpm.conf
 
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-# Copy the entrypoint script
+# Copy the entrypoint script and Nginx config template
 COPY entrypoint.sh /entrypoint.sh
+COPY etc/nginx/nginx.conf /etc/nginx/nginx.conf
 
 # Set entrypoint
-CMD [ "/bin/bash", "/entrypoint.sh" ]
+ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]
