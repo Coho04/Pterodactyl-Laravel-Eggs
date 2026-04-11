@@ -27,16 +27,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
         with:
           buildkitd-flags: --debug
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: ./
           file: ./${{ matrix.tag }}/php_${{ matrix.php_version }}/${{ matrix.variant == 'nginx' && 'nginx/' || '' }}Dockerfile
