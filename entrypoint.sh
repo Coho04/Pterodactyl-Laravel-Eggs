@@ -68,7 +68,12 @@ render_nginx_config() {
     # so the `include` directive in the main template is always valid.
     if [ -n "${TRUSTED_PROXIES}" ]; then
         {
-            for proxy in ${TRUSTED_PROXIES//,/ }; do
+            IFS=',' read -ra _trusted_proxies <<< "$TRUSTED_PROXIES"
+            for proxy in "${_trusted_proxies[@]}"; do
+                # Trim leading/trailing whitespace
+                proxy="${proxy#"${proxy%%[![:space:]]*}"}"
+                proxy="${proxy%"${proxy##*[![:space:]]}"}"
+                [ -z "$proxy" ] && continue
                 echo "    set_real_ip_from $proxy;"
             done
             echo "    real_ip_header X-Forwarded-For;"
