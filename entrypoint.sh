@@ -28,11 +28,9 @@ set -e
 TZ=${TZ:-UTC}
 export TZ
 
-# Determine the port that the web server should bind to.  In Pterodactyl
-# and Pelican environments the primary allocation port is exposed as
-# an environment variable called SERVER_PORT.  However some panels use
-# PORT instead.  To handle both cases, fall back to PORT and finally
-# to 8080 if neither is defined.
+# Determine the port that the web server should bind to. Pterodactyl/Pelican
+# exposes the primary allocation as SERVER_PORT; some panels use PORT; fall
+# back to 8080 if neither is set.
 if [ -n "${SERVER_PORT}" ]; then
     PORT_TO_USE="${SERVER_PORT}"
 elif [ -n "${PORT}" ]; then
@@ -42,69 +40,100 @@ else
 fi
 export SERVER_PORT="${PORT_TO_USE}"
 
-# Determine the internal Docker IP (used by some applications).  This uses
-# iproute2 to retrieve the local gateway address.
-INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
+# Determine the internal Docker IP (used by some applications).
+INTERNAL_IP=$(ip route get 1 2>/dev/null | awk '{print $(NF-2);exit}' || echo "127.0.0.1")
 export INTERNAL_IP
 
-# Start Redis in the background for cache and queue operations.
-echo "[SETUP] Starting Redis server"
-redis-server --daemonize yes --bind 127.0.0.1 --protected-mode yes
+# Nginx tunables with sensible defaults. Users can override any of these via
+# Pelican environment variables.
+export NGINX_DOCUMENT_ROOT="${NGINX_DOCUMENT_ROOT:-/home/container/public}"
+export NGINX_CLIENT_MAX_BODY_SIZE="${NGINX_CLIENT_MAX_BODY_SIZE:-100M}"
+export NGINX_WORKER_CONNECTIONS="${NGINX_WORKER_CONNECTIONS:-1024}"
+export NGINX_FASTCGI_READ_TIMEOUT="${NGINX_FASTCGI_READ_TIMEOUT:-300}"
 
-# If WEB_SERVER is unset or explicitly set to "nginx", start PHP‑FPM and Nginx.
-if [ "${WEB_SERVER}" = "nginx" ] || [ -z "${WEB_SERVER}" ]; then
-    if command -v nginx > /dev/null 2>&1; then
-        echo "[SETUP] Starting PHP-FPM"
-        # Launch PHP‑FPM as a daemon.  The PHP‑FPM configuration is adjusted
-        # in the Dockerfile to run as the non‑root `container` user.
+# Render the Nginx configuration either from the bundled template or from a
+# user-provided override at /home/container/.nginx/nginx.conf. The override
+# path is given minimal treatment (only SERVER_PORT is substituted) so that
+# power users retain full control over the rest of the file.
+render_nginx_config() {
+    mkdir -p /home/container/.nginx
+
+    if [ -f /home/container/.nginx/nginx.conf ]; then
+        echo -e "\033[1m\033[33m[SETUP] Using custom nginx.conf from /home/container/.nginx/nginx.conf\033[0m"
+        envsubst '${SERVER_PORT}' < /home/container/.nginx/nginx.conf > /tmp/nginx.conf
+        return
+    fi
+
+    # Render trusted-proxies snippet. Empty file when TRUSTED_PROXIES is unset
+    # so the `include` directive in the main template is always valid.
+    if [ -n "${TRUSTED_PROXIES}" ]; then
+        {
+            for proxy in ${TRUSTED_PROXIES//,/ }; do
+                echo "    set_real_ip_from $proxy;"
+            done
+            echo "    real_ip_header X-Forwarded-For;"
+            echo "    real_ip_recursive on;"
+        } > /tmp/nginx_realip.conf
+    else
+        : > /tmp/nginx_realip.conf
+    fi
+
+    # Render the main template. The allowlist prevents envsubst from touching
+    # Nginx-internal variables like $uri, $query_string, $fastcgi_script_name.
+    envsubst '${SERVER_PORT} ${NGINX_DOCUMENT_ROOT} ${NGINX_CLIENT_MAX_BODY_SIZE} ${NGINX_WORKER_CONNECTIONS} ${NGINX_FASTCGI_READ_TIMEOUT}' \
+        < /etc/nginx/nginx.conf > /tmp/nginx.conf
+}
+
+# Start Redis in the background for cache and queue operations.
+echo -e "\033[1m\033[33m[SETUP] Starting Redis server\033[0m"
+redis-server --daemonize yes --bind 127.0.0.1 --protected-mode yes || echo "[ERROR] Failed to start Redis"
+
+# Pick the web server mode. Default to nginx. The egg STARTUP command is
+# responsible for launching `php artisan serve` in artisan mode; here we only
+# handle the nginx/php-fpm side.
+WEB_SERVER="${WEB_SERVER:-nginx}"
+
+case "$WEB_SERVER" in
+    nginx)
+        echo -e "\033[1m\033[33m[SETUP] Rendering Nginx configuration for port ${SERVER_PORT}\033[0m"
+        render_nginx_config
+
+        echo -e "\033[1m\033[33m[SETUP] Starting PHP-FPM\033[0m"
         php-fpm -D
 
-        echo "[SETUP] Configuring Nginx for port ${SERVER_PORT}"
-        # Copy the bundled nginx.conf and replace the port placeholder with
-        # the actual port.  This substitution happens here rather than at
-        # build time so that it can react to environment variables provided
-        # by the panel.
-        if [ -f /etc/nginx/nginx.conf ]; then
-            cp /etc/nginx/nginx.conf /tmp/nginx.conf
-        else
-            echo "[ERROR] Nginx configuration not found at /etc/nginx/nginx.conf"
-            exit 1
-        fi
-        sed -i "s/{{SERVER_PORT}}/${SERVER_PORT}/g" /tmp/nginx.conf
-
-        echo "[SETUP] Starting Nginx"
-        # Start Nginx with the customised configuration.  The `daemon off` directive
-        # in nginx.conf ensures that the process stays in the foreground, and we
-        # run it in the background so that the script can continue.
-        nginx -c /tmp/nginx.conf &
-    else
-        echo "[SETUP] Nginx not installed, skipping Nginx startup"
-    fi
-fi
+        echo -e "\033[1m\033[33m[SETUP] Starting Nginx\033[0m"
+        nginx -c /tmp/nginx.conf
+        ;;
+    artisan)
+        echo -e "\033[1m\033[33m[SETUP] Web server mode: artisan serve (launched by STARTUP command)\033[0m"
+        ;;
+    *)
+        echo -e "\033[1m\033[31m[ERROR] Unknown WEB_SERVER value '${WEB_SERVER}' (allowed: nginx, artisan)\033[0m"
+        exit 1
+        ;;
+esac
 
 # Stream Laravel logs to stdout so that they appear in the container logs.
-echo "[SETUP] Streaming Laravel logs"
+echo -e "\033[1m\033[33m[SETUP] Streaming Laravel logs\033[0m"
 mkdir -p storage/logs
 touch storage/logs/laravel.log
 tail -f storage/logs/laravel.log &
 
-echo "[SETUP] Laravel environment ready"
+echo -e "\033[1m\033[32m[SETUP] Laravel environment ready\033[0m"
 
-# Change to the application directory.  If it does not exist, exit to avoid
-# executing the startup command from an unexpected location.
+# Change to the application directory. Exit if it does not exist.
 cd /home/container || exit 1
 
 # Show PHP version for troubleshooting.
 printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0mphp -v\n"
 php -v
 
-# Prepare the startup command.  The panel passes the command via the
-# STARTUP environment variable with double curly braces (e.g. {{SERVER_PORT}}).
-# Convert double braces to shell variable syntax and then evaluate it.
+# Prepare the startup command. The panel passes the command via the STARTUP
+# environment variable with double curly braces (e.g. {{SERVER_PORT}}). Convert
+# them to shell variable syntax and evaluate.
 PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 
-# Show the command that will be executed.
-printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0m%s\n" "$PARSED"
+echo -e "\033[1m\033[33mcontainer@pterodactyl~ \033[0m${PARSED}"
 
 # Execute the startup command.
 eval "$PARSED"
