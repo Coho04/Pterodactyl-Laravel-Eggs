@@ -55,9 +55,10 @@ USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-# Copy the entrypoint script and Nginx config template
+# Copy the entrypoint script, Nginx config template, and PHP OPcache config
 COPY entrypoint.sh /entrypoint.sh
 COPY etc/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY etc/php/opcache.ini /usr/local/etc/php/conf.d/opcache-custom.ini
 
 # Set entrypoint
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]
