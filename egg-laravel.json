@@ -1,126 +1,159 @@
 {
-  "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
-  "meta": {
-    "version": "PLCN_v3",
-    "update_url": "https://github.com/Coho04/Pterodactyl-Laravel-Eggs/blob/main/egg-laravel.json"
-  },
-  "exported_at": "2025-02-21T22:47:26+01:00",
-  "name": "Laravel",
-  "author": "cohohohn04@gmail.com",
-  "description": "Laravel application server with GitHub deployment, version matrix support, and package installation.",
-  "features": [],
-  "uuid": "2ff2d855-568b-45cc-9b57-00a90e49061f",
-  "docker_images": {
-    "PHP 8.2": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82",
-    "PHP 8.3": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_83",
-    "PHP 8.4": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84",
-    "PHP 8.5": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_85"
-  },
-  "file_denylist": [],
-  "startup": "cd /home/container || exit 1; if [ -n \"{{USERNAME}}\" ] && [ -n \"{{ACCESS_TOKEN}}\" ] && [ -n \"{{GITHUB_REPO_URL}}\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"{{BRANCH}}\"; else REPO_HOST=$(echo \"{{GITHUB_REPO_URL}}\" | sed 's|^https://||'); GITHUB_REPO_URL=\"https://{{USERNAME}}:{{ACCESS_TOKEN}}@$REPO_HOST\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"{{BRANCH}}\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ \"{{WEB_SERVER}}\" = \"artisan\" ]; then php artisan serve --host=0.0.0.0 --port=\"{{SERVER_PORT}}\" & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;",
-  "config": {
-    "files": "{}",
-    "startup": "{\r\n    \"done\": \"Laravel environment ready\"\r\n}",
-    "logs": "{\r\n    \"location\": \"storage/logs/laravel.log\"\r\n}",
-    "stop": "^C"
-  },
-  "scripts": {
-    "installation": {
-      "script": null,
-      "container": "alpine:3.4",
-      "entrypoint": "ash"
-    }
-  },
-  "variables": [
-    {
-      "name": "GitHub Repository URL",
-      "description": "The URL of your GitHub repository.",
-      "env_variable": "GITHUB_REPO_URL",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PLCN_v3",
+        "update_url": "https://github.com/Coho04/Pterodactyl-Laravel-Eggs/blob/main/egg-laravel.json"
     },
-    {
-      "name": "Git Access Token",
-      "description": "Your GitHub token for accessing the repository.",
-      "env_variable": "ACCESS_TOKEN",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
+    "exported_at": "2026-04-12T20:05:18+00:00",
+    "name": "Laravel",
+    "author": "cohohohn04@gmail.com",
+    "uuid": "2ff2d855-568b-45cc-9b57-00a90e49061f",
+    "description": "Laravel application server with GitHub deployment, version matrix support, and package installation.",
+    "image": null,
+    "tags": [],
+    "features": [],
+    "docker_images": {
+        "PHP 8.2": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_82",
+        "PHP 8.3": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_83",
+        "PHP 8.4": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_84",
+        "PHP 8.5": "ghcr.io/coho04/pterodactyl-docker-images:laravel_11_php_85"
     },
-    {
-      "name": "Git Username",
-      "description": "Username for accessing the GitHub repository.",
-      "env_variable": "USERNAME",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
+    "file_denylist": [],
+    "startup_commands": {
+        "Startup": "cd /home/container || exit 1; if [ -n \"{{USERNAME}}\" ] && [ -n \"{{ACCESS_TOKEN}}\" ] && [ -n \"{{GITHUB_REPO_URL}}\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"{{BRANCH}}\"; else REPO_HOST=$(echo \"{{GITHUB_REPO_URL}}\" | sed 's|^https://||'); GITHUB_REPO_URL=\"https://{{USERNAME}}:{{ACCESS_TOKEN}}@$REPO_HOST\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"{{BRANCH}}\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ \"{{WEB_SERVER}}\" = \"artisan\" ]; then php artisan serve --host=0.0.0.0 --port=\"{{SERVER_PORT}}\" & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;"
     },
-    {
-      "name": "Git Branch",
-      "description": "The branch of the repository to clone. Default is 'main'.",
-      "env_variable": "BRANCH",
-      "default_value": "main",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
+    "config": {
+        "files": "{}",
+        "startup": "{\n    \"done\": \"Laravel environment ready\"\n}",
+        "logs": "{\n    \"location\": \"storage\\/logs\\/laravel.log\"\n}",
+        "stop": "^C"
     },
-    {
-      "name": "Web Server",
-      "description": "Choose the web server. Use 'nginx' (recommended, default) for Nginx + PHP-FPM, or 'artisan' for `php artisan serve` (development / simple apps). Changes take effect on server restart.",
-      "env_variable": "WEB_SERVER",
-      "default_value": "nginx",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string|in:nginx,artisan",
-      "field_type": "text"
+    "scripts": {
+        "installation": {
+            "script": null,
+            "container": "alpine:3.4",
+            "entrypoint": "ash"
+        }
     },
-    {
-      "name": "Trusted Proxies",
-      "description": "Comma-separated list of proxy IPs or CIDR ranges that are allowed to set X-Forwarded-* headers (e.g. '10.0.0.0/8,172.16.0.0/12'). Leave empty if the container is exposed directly. Required for correct client IP detection behind Cloudflare, Nginx Proxy Manager, Traefik, etc.",
-      "env_variable": "TRUSTED_PROXIES",
-      "default_value": "",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "nullable|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Nginx Max Upload Size",
-      "description": "Maximum request body size Nginx will accept (e.g. '100M', '500M', '1G'). Controls Laravel file upload size limits at the web server layer.",
-      "env_variable": "NGINX_CLIENT_MAX_BODY_SIZE",
-      "default_value": "100M",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Nginx Document Root",
-      "description": "Directory Nginx serves as the document root. Defaults to Laravel's public/ directory. Change only if your application structure is non-standard.",
-      "env_variable": "NGINX_DOCUMENT_ROOT",
-      "default_value": "/home/container/public",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|string",
-      "field_type": "text"
-    },
-    {
-      "name": "Nginx FastCGI Read Timeout",
-      "description": "Seconds Nginx will wait for a PHP-FPM response before timing out. Increase for long-running requests like imports or reports.",
-      "env_variable": "NGINX_FASTCGI_READ_TIMEOUT",
-      "default_value": "300",
-      "user_viewable": true,
-      "user_editable": true,
-      "rules": "required|integer|min:1",
-      "field_type": "text"
-    }
-  ]
+    "variables": [
+        {
+            "sort": 7,
+            "name": "Git Access Token",
+            "description": "Your GitHub token for accessing the repository.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 9,
+            "name": "Git Branch",
+            "description": "The branch of the repository to clone. Default is 'main'.",
+            "env_variable": "BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 6,
+            "name": "GitHub Repository URL",
+            "description": "The URL of your GitHub repository.",
+            "env_variable": "GITHUB_REPO_URL",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 3,
+            "name": "Nginx Max Upload Size",
+            "description": "Maximum request body size Nginx will accept (e.g. '100M', '500M', '1G'). Controls Laravel file upload size limits at the web server layer.",
+            "env_variable": "NGINX_CLIENT_MAX_BODY_SIZE",
+            "default_value": "100M",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 4,
+            "name": "Nginx Document Root",
+            "description": "Directory Nginx serves as the document root. Defaults to Laravel's public/ directory. Change only if your application structure is non-standard.",
+            "env_variable": "NGINX_DOCUMENT_ROOT",
+            "default_value": "/home/container/public",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 5,
+            "name": "Nginx FastCGI Read Timeout",
+            "description": "Seconds Nginx will wait for a PHP-FPM response before timing out. Increase for long-running requests like imports or reports.",
+            "env_variable": "NGINX_FASTCGI_READ_TIMEOUT",
+            "default_value": "300",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "integer",
+                "min:1"
+            ]
+        },
+        {
+            "sort": 2,
+            "name": "Trusted Proxies",
+            "description": "Comma-separated list of proxy IPs or CIDR ranges that are allowed to set X-Forwarded-* headers (e.g. '10.0.0.0/8,172.16.0.0/12'). Leave empty if the container is exposed directly. Required for correct client IP detection behind Cloudflare, Nginx Proxy Manager, Traefik, etc.",
+            "env_variable": "TRUSTED_PROXIES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string"
+            ]
+        },
+        {
+            "sort": 8,
+            "name": "Git Username",
+            "description": "Username for accessing the GitHub repository.",
+            "env_variable": "USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 1,
+            "name": "Web Server",
+            "description": "Choose the web server. Use 'nginx' (recommended, default) for Nginx + PHP-FPM, or 'artisan' for `php artisan serve` (development / simple apps). Changes take effect on server restart.",
+            "env_variable": "WEB_SERVER",
+            "default_value": "nginx",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:nginx,artisan"
+            ]
+        }
+    ]
 }
