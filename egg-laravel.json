@@ -144,6 +144,21 @@
         },
         {
             "sort": 11,
+            "name": "Queue Workers",
+            "description": "Number of parallel queue worker processes. Increase for high queue throughput. Each worker consumes memory, so balance with available server resources.",
+            "env_variable": "QUEUE_WORKERS",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "integer",
+                "min:1",
+                "max:10"
+            ]
+        },
+        {
+            "sort": 12,
             "name": "Queue Connection",
             "description": "The queue connection driver to use (e.g. 'redis', 'database', 'sync'). Must match a connection defined in your Laravel config/queue.php.",
             "env_variable": "QUEUE_CONNECTION",

@@ -54,6 +54,7 @@ export NGINX_FASTCGI_READ_TIMEOUT="${NGINX_FASTCGI_READ_TIMEOUT:-300}"
 # Queue tunables.
 export QUEUE_WORKER="${QUEUE_WORKER:-true}"
 export QUEUE_CONNECTION="${QUEUE_CONNECTION:-redis}"
+export QUEUE_WORKERS="${QUEUE_WORKERS:-1}"
 
 # Render the Nginx configuration either from the bundled template or from a
 # user-provided override at /home/container/.nginx/nginx.conf. The override
