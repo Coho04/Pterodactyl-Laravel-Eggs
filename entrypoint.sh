@@ -94,32 +94,17 @@ render_nginx_config() {
 }
 
 # ---------------------------------------------------------------------------
-# Assemble the Supervisor configuration based on the selected web server mode
-# and queue worker setting. Only the relevant program configs are copied into
-# /tmp/supervisor.d/ so that Supervisor starts exactly the right processes.
+# Assemble the Supervisor configuration. Nginx + PHP-FPM + Redis are always
+# started; the queue worker is optional.
 # ---------------------------------------------------------------------------
-WEB_SERVER="${WEB_SERVER:-nginx}"
-
 mkdir -p /tmp/supervisor.d
 
-# Redis is always needed (cache, session, queue).
-cp /etc/supervisor/conf.d/redis.conf /tmp/supervisor.d/
+echo -e "\033[1m\033[33m[SETUP] Rendering Nginx configuration for port ${SERVER_PORT}\033[0m"
+render_nginx_config
 
-case "$WEB_SERVER" in
-    nginx)
-        echo -e "\033[1m\033[33m[SETUP] Web server mode: nginx + php-fpm\033[0m"
-        render_nginx_config
-        cp /etc/supervisor/conf.d/nginx.conf /tmp/supervisor.d/
-        cp /etc/supervisor/conf.d/php-fpm.conf /tmp/supervisor.d/
-        ;;
-    artisan)
-        echo -e "\033[1m\033[33m[SETUP] Web server mode: artisan serve (launched by STARTUP command)\033[0m"
-        ;;
-    *)
-        echo -e "\033[1m\033[31m[ERROR] Unknown WEB_SERVER value '${WEB_SERVER}' (allowed: nginx, artisan)\033[0m"
-        exit 1
-        ;;
-esac
+cp /etc/supervisor/conf.d/redis.conf /tmp/supervisor.d/
+cp /etc/supervisor/conf.d/nginx.conf /tmp/supervisor.d/
+cp /etc/supervisor/conf.d/php-fpm.conf /tmp/supervisor.d/
 
 if [ "$QUEUE_WORKER" = "true" ]; then
     echo -e "\033[1m\033[33m[SETUP] Queue worker enabled (connection: ${QUEUE_CONNECTION})\033[0m"
