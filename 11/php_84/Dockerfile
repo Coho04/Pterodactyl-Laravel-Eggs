@@ -26,7 +26,7 @@ LABEL author="Collin Ilgner" maintainer="cohohohn04@gmail.com"
 
 # Install system dependencies (including Nginx + gettext-base for envsubst)
 RUN apt-get update -y \
-    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client nginx redis-server gettext-base \
+    && apt-get install -y git curl zip unzip tar sqlite3 libzip-dev libonig-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev iproute2 default-mysql-client nginx redis-server gettext-base supervisor \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -57,10 +57,14 @@ USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
-# Copy the entrypoint script, Nginx config template, and PHP OPcache config
+# Copy the entrypoint script, Nginx config template, PHP OPcache config,
+# Supervisor configs, and queue-worker script
 COPY entrypoint.sh /entrypoint.sh
 COPY etc/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY etc/php/opcache.ini /usr/local/etc/php/conf.d/opcache-custom.ini
+COPY etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY etc/supervisor/conf.d/ /etc/supervisor/conf.d/
+COPY --chmod=755 scripts/queue-worker.sh /scripts/queue-worker.sh
 
 # Set entrypoint
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

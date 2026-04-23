@@ -51,6 +51,10 @@ export NGINX_CLIENT_MAX_BODY_SIZE="${NGINX_CLIENT_MAX_BODY_SIZE:-100M}"
 export NGINX_WORKER_CONNECTIONS="${NGINX_WORKER_CONNECTIONS:-1024}"
 export NGINX_FASTCGI_READ_TIMEOUT="${NGINX_FASTCGI_READ_TIMEOUT:-300}"
 
+# Queue tunables.
+export QUEUE_WORKER="${QUEUE_WORKER:-true}"
+export QUEUE_CONNECTION="${QUEUE_CONNECTION:-redis}"
+
 # Render the Nginx configuration either from the bundled template or from a
 # user-provided override at /home/container/.nginx/nginx.conf. The override
 # path is given minimal treatment (only SERVER_PORT is substituted) so that
@@ -89,25 +93,24 @@ render_nginx_config() {
         < /etc/nginx/nginx.conf > /tmp/nginx.conf
 }
 
-# Start Redis in the background for cache and queue operations.
-echo -e "\033[1m\033[33m[SETUP] Starting Redis server\033[0m"
-redis-server --daemonize yes --bind 127.0.0.1 --protected-mode yes || echo "[ERROR] Failed to start Redis"
-
-# Pick the web server mode. Default to nginx. The egg STARTUP command is
-# responsible for launching `php artisan serve` in artisan mode; here we only
-# handle the nginx/php-fpm side.
+# ---------------------------------------------------------------------------
+# Assemble the Supervisor configuration based on the selected web server mode
+# and queue worker setting. Only the relevant program configs are copied into
+# /tmp/supervisor.d/ so that Supervisor starts exactly the right processes.
+# ---------------------------------------------------------------------------
 WEB_SERVER="${WEB_SERVER:-nginx}"
+
+mkdir -p /tmp/supervisor.d
+
+# Redis is always needed (cache, session, queue).
+cp /etc/supervisor/conf.d/redis.conf /tmp/supervisor.d/
 
 case "$WEB_SERVER" in
     nginx)
-        echo -e "\033[1m\033[33m[SETUP] Rendering Nginx configuration for port ${SERVER_PORT}\033[0m"
+        echo -e "\033[1m\033[33m[SETUP] Web server mode: nginx + php-fpm\033[0m"
         render_nginx_config
-
-        echo -e "\033[1m\033[33m[SETUP] Starting PHP-FPM\033[0m"
-        php-fpm -D
-
-        echo -e "\033[1m\033[33m[SETUP] Starting Nginx\033[0m"
-        nginx -c /tmp/nginx.conf
+        cp /etc/supervisor/conf.d/nginx.conf /tmp/supervisor.d/
+        cp /etc/supervisor/conf.d/php-fpm.conf /tmp/supervisor.d/
         ;;
     artisan)
         echo -e "\033[1m\033[33m[SETUP] Web server mode: artisan serve (launched by STARTUP command)\033[0m"
@@ -117,6 +120,15 @@ case "$WEB_SERVER" in
         exit 1
         ;;
 esac
+
+if [ "$QUEUE_WORKER" = "true" ]; then
+    echo -e "\033[1m\033[33m[SETUP] Queue worker enabled (connection: ${QUEUE_CONNECTION})\033[0m"
+    cp /etc/supervisor/conf.d/queue-worker.conf /tmp/supervisor.d/
+fi
+
+# Start Supervisor (background). It manages redis, nginx, php-fpm, queue-worker.
+echo -e "\033[1m\033[33m[SETUP] Starting Supervisor\033[0m"
+supervisord -c /etc/supervisor/supervisord.conf
 
 # Stream Laravel logs to stdout so that they appear in the container logs.
 echo -e "\033[1m\033[33m[SETUP] Streaming Laravel logs\033[0m"
