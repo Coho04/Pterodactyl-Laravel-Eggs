@@ -34,9 +34,11 @@ RUN apt-get update -y \
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-# Install PHP extensions
+# Install PHP extensions (including the Redis extension via PECL)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd sockets ftp \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # Install Composer globally
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

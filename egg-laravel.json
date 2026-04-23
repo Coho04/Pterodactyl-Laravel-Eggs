@@ -20,7 +20,7 @@
     },
     "file_denylist": [],
     "startup_commands": {
-        "Startup": "cd /home/container || exit 1; if [ -n \"{{USERNAME}}\" ] && [ -n \"{{ACCESS_TOKEN}}\" ] && [ -n \"{{GITHUB_REPO_URL}}\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"{{BRANCH}}\"; else REPO_HOST=$(echo \"{{GITHUB_REPO_URL}}\" | sed 's|^https://||'); GITHUB_REPO_URL=\"https://{{USERNAME}}:{{ACCESS_TOKEN}}@$REPO_HOST\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"{{BRANCH}}\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ -f /tmp/php-fpm.pid ]; then echo -e \"[SETUP] Reloading PHP-FPM workers\"; kill -USR2 $(cat /tmp/php-fpm.pid) 2>/dev/null; fi; if [ \"{{WEB_SERVER}}\" = \"artisan\" ]; then php artisan serve --host=0.0.0.0 --port=\"{{SERVER_PORT}}\" & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;"
+        "Startup": "cd /home/container || exit 1; if [ -n \"{{USERNAME}}\" ] && [ -n \"{{ACCESS_TOKEN}}\" ] && [ -n \"{{GITHUB_REPO_URL}}\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"{{BRANCH}}\"; else REPO_HOST=$(echo \"{{GITHUB_REPO_URL}}\" | sed 's|^https://||'); GITHUB_REPO_URL=\"https://{{USERNAME}}:{{ACCESS_TOKEN}}@$REPO_HOST\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"{{BRANCH}}\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ -f /tmp/php-fpm.pid ]; then echo -e \"[SETUP] Reloading PHP-FPM workers\"; kill -USR2 $(cat /tmp/php-fpm.pid) 2>/dev/null; fi; if [ \"{{WEB_SERVER}}\" = \"artisan\" ]; then php artisan serve --host=0.0.0.0 --port=\"{{SERVER_PORT}}\" & fi; if [ \"{{QUEUE_WORKER}}\" = \"true\" ]; then echo -e \"[SETUP] Starting queue worker (connection: {{QUEUE_CONNECTION}})\"; php artisan queue:work {{QUEUE_CONNECTION}} --sleep=3 --tries=3 --max-time=3600 & fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;"
     },
     "config": {
         "files": "{}",
@@ -134,6 +134,33 @@
             "description": "Username for accessing the GitHub repository.",
             "env_variable": "USERNAME",
             "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string"
+            ]
+        },
+        {
+            "sort": 10,
+            "name": "Queue Worker",
+            "description": "Enable the Laravel queue worker. Set to 'true' to start a background queue worker on server boot. Disable if your application does not use queues.",
+            "env_variable": "QUEUE_WORKER",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:true,false"
+            ]
+        },
+        {
+            "sort": 11,
+            "name": "Queue Connection",
+            "description": "The queue connection driver to use (e.g. 'redis', 'database', 'sync'). Must match a connection defined in your Laravel config/queue.php.",
+            "env_variable": "QUEUE_CONNECTION",
+            "default_value": "redis",
             "user_viewable": true,
             "user_editable": true,
             "rules": [
