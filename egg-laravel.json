@@ -20,7 +20,7 @@
     },
     "file_denylist": [],
     "startup_commands": {
-        "Startup": "cd /home/container || exit 1; if [ -n \"{{USERNAME}}\" ] && [ -n \"{{ACCESS_TOKEN}}\" ] && [ -n \"{{GITHUB_REPO_URL}}\" ]; then if [ -d .git ]; then echo -e \"[SETUP] Updating the repository\"; git fetch --all && git reset --hard origin/\"{{BRANCH}}\"; else REPO_HOST=$(echo \"{{GITHUB_REPO_URL}}\" | sed 's|^https://||'); GITHUB_REPO_URL=\"https://{{USERNAME}}:{{ACCESS_TOKEN}}@$REPO_HOST\"; echo -e \"[SETUP] Cloning the repository\"; git clone -b \"{{BRANCH}}\" \"$GITHUB_REPO_URL\" /home/container/tmp && mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; fi; else echo -e \"[ERROR] Missing GitHub credentials or repository URL\"; exit 1; fi; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; npm install; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ -f /tmp/php-fpm.pid ]; then echo -e \"[SETUP] Reloading PHP-FPM workers\"; kill -USR2 $(cat /tmp/php-fpm.pid) 2>/dev/null; fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;"
+        "Startup": "cd /home/container || exit 1; KEY=/home/container/.ssh/deploy_key; BR=\"${BRANCH:-main}\"; MODE=\"${GIT_AUTH:-auto}\"; if [[ \"$GITHUB_REPO_URL\" =~ ^git@([^:]+):(.+)$ ]]; then GHOST=\"${BASH_REMATCH[1]}\"; GPATH=\"${BASH_REMATCH[2]}\"; elif [[ \"$GITHUB_REPO_URL\" =~ ^https?://([^@/]+@)?([^/]+)/(.+)$ ]]; then GHOST=\"${BASH_REMATCH[2]}\"; GPATH=\"${BASH_REMATCH[3]}\"; else echo -e \"[ERROR] GITHUB_REPO_URL must look like https://host/owner/repo or git@host:owner/repo\"; exit 1; fi; GPATH=\"${GPATH%/}\"; GPATH=\"${GPATH%.git}\"; if [ \"$MODE\" = \"auto\" ]; then if [ -n \"$ACCESS_TOKEN\" ]; then MODE=token; elif [ -f \"$KEY\" ]; then MODE=deploy_key; else MODE=none; fi; fi; case \"$MODE\" in token|deploy_key|none) ;; *) echo -e \"[ERROR] GIT_AUTH must be auto, token, deploy_key or none\"; exit 1;; esac; if [ \"$MODE\" = \"deploy_key\" ]; then REMOTE=\"git@$GHOST:$GPATH.git\"; mkdir -p /home/container/.ssh && chmod 700 /home/container/.ssh; if [ ! -f \"$KEY\" ]; then ssh-keygen -q -t ed25519 -N \"\" -C \"pelican-${P_SERVER_UUID:-$HOSTNAME}\" -f \"$KEY\" || { echo -e \"[ERROR] ssh-keygen failed\"; exit 1; }; echo -e \"[SETUP] New deploy key generated. Add this public key as a READ-ONLY deploy key to $GHOST/$GPATH, then restart:\"; cat \"$KEY.pub\"; fi; if [ \"$GHOST\" = \"github.com\" ]; then echo \"github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\" > /home/container/.ssh/known_hosts; HKC=yes; else HKC=accept-new; fi; export GIT_SSH_COMMAND=\"ssh -i $KEY -o IdentitiesOnly=yes -o UserKnownHostsFile=/home/container/.ssh/known_hosts -o StrictHostKeyChecking=$HKC\"; else REMOTE=\"https://$GHOST/$GPATH.git\"; fi; if [ \"$MODE\" = \"token\" ]; then GIT_B64=$(printf '%s:%s' \"${USERNAME:-x-access-token}\" \"$ACCESS_TOKEN\" | base64 | tr -d '\\n'); fi; g() { if [ \"$MODE\" = \"token\" ]; then git -c \"http.extraHeader=Authorization: Basic $GIT_B64\" \"$@\"; else git \"$@\"; fi; }; if [ -d .git ]; then git remote set-url origin \"$REMOTE\"; if [ \"${AUTO_UPDATE:-true}\" = \"true\" ]; then echo -e \"[SETUP] Updating the repository ($MODE)\"; if g fetch --prune --tags origin; then git reset --hard \"${DEPLOY_REF:-origin/$BR}\"; else echo -e \"[WARN] git fetch failed - starting with the code already present\"; fi; else echo -e \"[SETUP] AUTO_UPDATE=false - keeping the code already present ($(git rev-parse --short HEAD))\"; fi; else echo -e \"[SETUP] Cloning the repository ($MODE)\"; if g clone -b \"$BR\" \"$REMOTE\" /home/container/tmp; then mv /home/container/tmp/.git . && rm -rf /home/container/tmp && git reset --hard; if [ -n \"$DEPLOY_REF\" ]; then git reset --hard \"$DEPLOY_REF\"; fi; else rm -rf /home/container/tmp; echo -e \"[ERROR] Clone failed - check GITHUB_REPO_URL, BRANCH and the access method ($MODE)\"; exit 1; fi; fi; unset ACCESS_TOKEN GIT_B64; if [ -f composer.json ]; then echo -e \"[SETUP] Install Composer packages\"; composer install; else echo -e \"[ERROR] No valid composer.json file found for Composer\"; exit 1; fi; if [ -f package.json ]; then echo -e \"[SETUP] Install NPM packages\"; if [ \"${NPM_IGNORE_SCRIPTS:-false}\" = \"true\" ]; then npm install --ignore-scripts; else npm install; fi; if [ -f vite.config.js ]; then echo -e \"[SETUP] Build Assets with Vite\"; npm run build; else echo -e \"[ERROR] No valid Vite file found for Vite\"; fi; else echo -e \"[ERROR] No valid package.json file found for NPM\"; fi; php artisan migrate --no-interaction --force; if [ -f /tmp/php-fpm.pid ]; then echo -e \"[SETUP] Reloading PHP-FPM workers\"; kill -USR2 $(cat /tmp/php-fpm.pid) 2>/dev/null; fi; while true; do read -r cmd; if [ -n \"$cmd\" ]; then eval \"$cmd\" || true; fi; done;"
     },
     "config": {
         "files": "{}",
@@ -39,13 +39,13 @@
         {
             "sort": 7,
             "name": "Git Access Token",
-            "description": "Your GitHub token for accessing the repository.",
+            "description": "Token for HTTPS access (GIT_AUTH=token or auto). Prefer a fine-grained, read-only token. Leave empty for public repositories or deploy keys.",
             "env_variable": "ACCESS_TOKEN",
             "default_value": "",
             "user_viewable": true,
             "user_editable": true,
             "rules": [
-                "required",
+                "nullable",
                 "string"
             ]
         },
@@ -118,13 +118,13 @@
         {
             "sort": 8,
             "name": "Git Username",
-            "description": "Username for accessing the GitHub repository.",
+            "description": "Username for HTTPS access. Optional for GitHub tokens.",
             "env_variable": "USERNAME",
             "default_value": "",
             "user_viewable": true,
             "user_editable": true,
             "rules": [
-                "required",
+                "nullable",
                 "string"
             ]
         },
@@ -181,6 +181,62 @@
             "rules": [
                 "nullable",
                 "string"
+            ]
+        },
+        {
+            "sort": 13,
+            "name": "Git Access Method",
+            "description": "auto (token if set, else deploy key if present, else anonymous), token, deploy_key (SSH key generated on first start, add its public key as a read-only deploy key) or none (public repository).",
+            "env_variable": "GIT_AUTH",
+            "default_value": "auto",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:auto,token,deploy_key,none"
+            ]
+        },
+        {
+            "sort": 14,
+            "name": "Auto Update",
+            "description": "true: fetch and reset to the branch (or DEPLOY_REF) on every start. false: start with the code already present.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:true,false"
+            ]
+        },
+        {
+            "sort": 15,
+            "name": "Deploy Ref",
+            "description": "Optional tag or commit to deploy instead of the head of the branch, e.g. v1.4.0.",
+            "env_variable": "DEPLOY_REF",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string",
+                "max:200"
+            ]
+        },
+        {
+            "sort": 16,
+            "name": "NPM Ignore Scripts",
+            "description": "true: npm install --ignore-scripts, so install scripts of the repository and its dependencies do not run.",
+            "env_variable": "NPM_IGNORE_SCRIPTS",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "string",
+                "in:true,false"
             ]
         }
     ]

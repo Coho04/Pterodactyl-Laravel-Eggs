@@ -11,6 +11,8 @@ This project contains Docker images for use with Pterodactyl. It includes variou
 - `java/21/Dockerfile`: Dockerfile for Java 21.
 - `Laravel/entrypoint.sh`: Entrypoint script executed when the Laravel container starts.
 - `Laravel/11/Dockerfile`: Dockerfile for Laravel with PHP 8.2.
+- `egg-startup.sh`: source of the egg's startup command (see *Repository Access and Deployment*).
+- `scripts/build-egg-startup.sh`: writes `egg-startup.sh` into `egg-laravel.json`.
 
 ## Docker Images
 
@@ -25,6 +27,57 @@ To run a Docker image, use the following command:
 ```sh
 docker run -it ghcr.io/coho04/pterodactyl-docker-images:java_<version>
 ```
+
+## Repository Access and Deployment
+
+On every start the Laravel egg fetches the application from Git, runs `composer install`,
+`npm install`, `npm run build` and `php artisan migrate`. How it authenticates and what it deploys
+is controlled by these variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `GIT_AUTH` | `auto` | `token`, `deploy_key`, `none` or `auto` (token if `ACCESS_TOKEN` is set, else deploy key if one exists, else anonymous). |
+| `USERNAME` / `ACCESS_TOKEN` | *(empty)* | HTTPS credentials for `GIT_AUTH=token`. Optional since this release. |
+| `AUTO_UPDATE` | `true` | `false` starts with the code already in the container instead of pulling. |
+| `DEPLOY_REF` | *(empty)* | Tag or commit to deploy instead of the head of `BRANCH`. |
+| `NPM_IGNORE_SCRIPTS` | `false` | `true` runs `npm install --ignore-scripts`, so install scripts of the repository and its dependencies do not run. |
+
+The defaults keep the previous behaviour, so existing servers keep working without changes.
+
+### Recommended: read-only deploy keys
+
+A deploy key grants read access to exactly one repository and never expires, so no account-wide
+token has to live on the server.
+
+1. Set `GIT_AUTH` to `deploy_key` and start the server.
+2. The console prints a new public key (`ssh-ed25519 … pelican-<server-uuid>`). It is stored in
+   `/home/container/.ssh/deploy_key`.
+3. Add it in the repository under **Settings → Deploy keys** — leave *Allow write access* off.
+4. Restart the server.
+
+GitHub's SSH host key is pinned; for other hosts the key is trusted on first use.
+
+### Using a token
+
+If you prefer HTTPS, use a **fine-grained** token limited to the repositories you deploy, with
+**Contents: Read-only** and an expiry date. The token is sent as an HTTP header and is no longer
+written into `.git/config` or the console; older remote URLs that contain credentials are cleaned
+up on the next start. Public repositories need no credentials at all (`GIT_AUTH=none`).
+
+### Hardening
+
+Every start deploys whatever is on the branch. Anyone who can push to it can run code on your
+server — through the application itself, Composer, npm install scripts or migrations. For
+production servers we recommend:
+
+- protect the branch (pull requests only, no force pushes) in the repository settings;
+- `AUTO_UPDATE=false` or a fixed `DEPLOY_REF`, and deploy deliberately;
+- `NPM_IGNORE_SCRIPTS=true` (test it once: most Vite/esbuild setups build fine without install scripts).
+
+### Changing the startup command
+
+The startup command lives in `egg-startup.sh` and is written into `egg-laravel.json` by
+`sh scripts/build-egg-startup.sh` (requires `jq`). Edit the script, not the JSON.
 
 ## Web Server Modes
 
