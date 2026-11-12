@@ -8,6 +8,12 @@ on:
     branches:
       - main
 
+# Short-lived GITHUB_TOKEN instead of a stored personal access token. The package must grant
+# this repository Write access (Package settings -> Manage Actions access).
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push:
     name: "Coho04:laravel_${{ matrix.tag }}_php_${{ matrix.php_version }}"
@@ -30,7 +36,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.REGISTRY_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v7
         with:
           context: ./
