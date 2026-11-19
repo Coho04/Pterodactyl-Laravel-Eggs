@@ -11,9 +11,17 @@ updates:
       interval: "daily"
     assignees:
       - "Coho04"
+  # The Dockerfiles live in 11/php_XX/, one per PHP version, not in the repository root.
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/11/*"
     schedule:
       interval: "daily"
     assignees:
       - "Coho04"
+    # Each folder pins one PHP line on purpose (php_82 = 8.2, ...); moving to a newer PHP
+    # version is a new image, not an update. Base image patches arrive through the monthly
+    # rebuild in laravel.yml.
+    ignore:
+      - dependency-name: "php"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
